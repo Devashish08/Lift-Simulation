@@ -14,12 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
-    // if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
-    //   alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
-    //   return;
-    // }
-    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 10) {
-      alert("Please enter valid numbers for floors (2 - 10) and lifts (1-8).");
+    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
+      alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
       return;
     }
 
@@ -29,8 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lifts = [];
 
     createFloors(numFloors);
-    createLifts(numLifts, numFloors);
+    createLifts(numLifts);
   }
+
   function createFloors(numFloors) {
     for (let i = numFloors; i >= 1; i--) {
       const floor = document.createElement("div");
@@ -57,21 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
     addFloorButtonListeners();
   }
 
-  function createLifts(numLifts, numFloors) {
+  function createLifts(numLifts) {
+    const liftWidth = 80; // Width of each lift
     for (let i = 0; i < numLifts; i++) {
       const lift = document.createElement("div");
       lift.className = "lift";
       lift.innerHTML = `
-        <div class="lift-display">
-          <span class="lift-floor">1</span>
-          <span class="lift-direction"></span>
-        </div>
-        <div class="lift-doors">
-          <div class="lift-door lift-door-left"></div>
-          <div class="lift-door lift-door-right"></div>
-        </div>
-      `;
-      lift.style.left = `${i * 80}px`;
+      <div class="lift-doors">
+        <div class="lift-door lift-door-left"></div>
+        <div class="lift-door lift-door-right"></div>
+      </div>
+    `;
+      lift.style.left = `${i * liftWidth}px`; // Position based on index
       lift.style.bottom = "0px"; // Start at the first floor
       liftsContainer.appendChild(lift);
       lifts.push({
@@ -95,60 +89,44 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function requestLift(targetFloor, direction) {
-    const availableLift = lifts.find((lift) => !lift.isMoving);
-    if (availableLift) {
-      if (!availableLift.targetFloors.includes(targetFloor)) {
-        availableLift.targetFloors.push(targetFloor);
-      }
-      if (!availableLift.isMoving) {
-        moveLift(availableLift, availableLift.targetFloors.shift());
-      }
+    const availableLifts = lifts.filter((lift) => !lift.isMoving);
+    if (availableLifts.length > 0) {
+      // Find the nearest available lift
+      const nearestLift = availableLifts.reduce((prev, curr) =>
+        Math.abs(curr.currentFloor - targetFloor) <
+        Math.abs(prev.currentFloor - targetFloor)
+          ? curr
+          : prev
+      );
+      nearestLift.targetFloors.push(targetFloor);
+      moveLift(nearestLift);
     } else {
-      const nearestLift = findNearestLift(targetFloor, direction);
-      if (!nearestLift.targetFloors.includes(targetFloor)) {
-        nearestLift.targetFloors.push(targetFloor);
+      // If no lifts are available, check for idle lifts
+      const idleLifts = lifts.filter(
+        (lift) => lift.currentFloor === 1 && !lift.isMoving
+      );
+      if (idleLifts.length > 0) {
+        const nearestIdleLift = idleLifts[0]; // Assuming the first idle lift is the nearest
+        nearestIdleLift.targetFloors.push(targetFloor);
+        moveLift(nearestIdleLift);
       }
     }
   }
 
-  function findNearestLift(targetFloor, direction) {
-    return lifts.reduce((nearest, current) => {
-      const currentDistance = Math.abs(current.currentFloor - targetFloor);
-      const nearestDistance = Math.abs(nearest.currentFloor - targetFloor);
-      if (currentDistance === nearestDistance) {
-        return current.targetFloors.length < nearest.targetFloors.length
-          ? current
-          : nearest;
-      }
-      return currentDistance < nearestDistance ? current : nearest;
-    });
-  }
-
-  async function moveLift(lift, targetFloor) {
+  async function moveLift(lift) {
     lift.isMoving = true;
-    const floorsToMove = Math.abs(targetFloor - lift.currentFloor);
-    const direction = targetFloor > lift.currentFloor ? 1 : -1;
+    const targetFloor = lift.targetFloors.shift();
+    const translateY = (targetFloor - 1) * floorHeight;
+    lift.element.style.transform = `translateY(-${translateY}px)`;
+    await wait(2000); // Simulate movement time (2 seconds to reach the destination)
 
-    const displayFloor = lift.element.querySelector(".lift-floor");
-    const displayDirection = lift.element.querySelector(".lift-direction");
-    displayDirection.textContent = direction > 0 ? "▲" : "▼";
-
-    for (let i = 0; i < floorsToMove; i++) {
-      lift.currentFloor += direction;
-      displayFloor.textContent = lift.currentFloor;
-      const translateY = (lift.currentFloor - 1) * floorHeight;
-      lift.element.style.transform = `translateY(-${translateY}px)`;
-      await wait(2000);
-    }
-
-    displayDirection.textContent = "";
+    // Wait until the lift has fully reached the destination floor before opening doors
     await openCloseDoors(lift);
 
     lift.isMoving = false;
 
     if (lift.targetFloors.length > 0) {
-      const nextFloor = lift.targetFloors.shift();
-      moveLift(lift, nextFloor);
+      moveLift(lift);
     }
   }
 
