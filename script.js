@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let floors = [];
   let lifts = [];
   let floorHeight = 80; // Height of each floor in pixels
+  let pendingRequests = new Set();
 
   startButton.addEventListener("click", startSimulation);
 
@@ -14,8 +15,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
-    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
-      alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
+    if (numFloors < 2 || numLifts < 1 || numFloors > 100 || numLifts > 100) {
+      alert(
+        "Please enter valid numbers for floors (2 - 100) and lifts (1 - 100)"
+      );
       return;
     }
 
@@ -23,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     liftsContainer.innerHTML = "";
     floors = [];
     lifts = [];
+    pendingRequests = new Set();
 
     createFloors(numFloors);
     createLifts(numLifts);
@@ -44,9 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
               ? `<button class="floor-button down-button" data-floor="${i}" data-direction="down">Down</button>`
               : ""
           }
+          <div class="floor-number">${i}</div>
         </div>
-        <div class="floor-line"></div>
-        <div class="floor-number">Floor ${i}</div>
       `;
       floorsContainer.appendChild(floor);
       floors.push(floor);
@@ -55,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createLifts(numLifts) {
+    document.documentElement.style.setProperty("--num-lifts", numLifts);
     const liftWidth = 80; // Width of each lift
     for (let i = 0; i < numLifts; i++) {
       const lift = document.createElement("div");
@@ -89,6 +93,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function requestLift(targetFloor, direction) {
+    if (pendingRequests.has(targetFloor)) {
+      return; // If there's already a pending request for this floor, do nothing
+    }
+    pendingRequests.add(targetFloor);
+
     const availableLifts = lifts.filter((lift) => !lift.isMoving);
     if (availableLifts.length > 0) {
       // Find the nearest available lift
@@ -124,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     await openCloseDoors(lift);
 
     lift.isMoving = false;
+    pendingRequests.delete(targetFloor); // Remove the floor from pending requests
 
     if (lift.targetFloors.length > 0) {
       moveLift(lift);
