@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const liftsContainer = document.getElementById("lifts-container");
   let floors = [];
   let lifts = [];
-  let floorHeight = 100; // Height of each floor in pixels
+  let floorHeight = 80; // Height of each floor in pixels
 
   startButton.addEventListener("click", startSimulation);
 
