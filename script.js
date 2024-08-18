@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
-    if (numFloors < 2 || numLifts < 1 || numLifts > 10) {
-      alert("Please enter valid numbers for floors (min 2) and lifts (1-10).");
+    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
+      alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
       return;
     }
 
