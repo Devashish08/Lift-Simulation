@@ -18,10 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
     //   alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
     //   return;
     // }
-    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
-      alert(
-        "Please enter valid numbers for floors (2 - 100) and lifts (1-50)."
-      );
+    if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 10) {
+      alert("Please enter valid numbers for floors (2 - 10) and lifts (1-8).");
       return;
     }
 
