@@ -14,8 +14,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
+    // if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
+    //   alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
+    //   return;
+    // }
     if (numFloors < 2 || numLifts < 1 || numLifts > 8 || numFloors > 50) {
-      alert("Please enter valid numbers for floors (2 - 50) and lifts (1-8).");
+      alert(
+        "Please enter valid numbers for floors (2 - 100) and lifts (1-50)."
+      );
       return;
     }
 
@@ -27,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
     createFloors(numFloors);
     createLifts(numLifts, numFloors);
   }
-
   function createFloors(numFloors) {
     for (let i = numFloors; i >= 1; i--) {
       const floor = document.createElement("div");
@@ -135,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayFloor.textContent = lift.currentFloor;
       const translateY = (lift.currentFloor - 1) * floorHeight;
       lift.element.style.transform = `translateY(-${translateY}px)`;
-      await wait(2000); // 2 seconds per floor
+      await wait(2000);
     }
 
     displayDirection.textContent = "";
