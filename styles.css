@@ -46,6 +46,15 @@ body {
     z-index: 2;
 }
 
+.floor-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #ccc;
+    z-index: 1;
+}
+
 .floor-buttons {
     display: flex;
     flex-direction: column;
@@ -155,6 +164,15 @@ body {
 .lift.doors-closing .lift-door-left,
 .lift.doors-closing .lift-door-right {
     transform: translateX(0);
+}
+
+#current-floor-display {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 16px;
+    color: #333;
+    z-index: 3;
 }
 
 @media (max-width: 600px) {

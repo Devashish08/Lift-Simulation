@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let floors = [];
   let lifts = [];
   let floorHeight = 80; // Height of each floor in pixels
-  let pendingRequests = new Set();
+  let pendingRequests = [];
 
   startButton.addEventListener("click", startSimulation);
 
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     liftsContainer.innerHTML = "";
     floors = [];
     lifts = [];
-    pendingRequests = new Set();
+    pendingRequests = [];
 
     createFloors(numFloors);
     createLifts(numLifts);
@@ -93,33 +93,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function requestLift(targetFloor, direction) {
-    if (pendingRequests.has(targetFloor)) {
-      return; // If there's already a pending request for this floor, do nothing
+    // Check if this request is already in the pendingRequests
+    if (
+      pendingRequests.some(
+        (req) => req.floor === targetFloor && req.direction === direction
+      )
+    ) {
+      return; // If there's already a pending request for this floor and direction, do nothing
     }
-    pendingRequests.add(targetFloor);
 
-    const availableLifts = lifts.filter((lift) => !lift.isMoving);
-    if (availableLifts.length > 0) {
-      // Find the nearest available lift
-      const nearestLift = availableLifts.reduce((prev, curr) =>
+    // Check for idle lifts on the same floor
+    const idleLiftsOnSameFloor = lifts.filter(
+      (lift) => lift.currentFloor === targetFloor && !lift.isMoving
+    );
+    if (idleLiftsOnSameFloor.length > 0) {
+      const nearestIdleLift = idleLiftsOnSameFloor[0];
+      nearestIdleLift.targetFloors.push(targetFloor);
+      moveLift(nearestIdleLift);
+      return;
+    }
+
+    // Check for other idle lifts
+    const idleLifts = lifts.filter((lift) => !lift.isMoving);
+    if (idleLifts.length > 0) {
+      const nearestIdleLift = idleLifts.reduce((prev, curr) =>
         Math.abs(curr.currentFloor - targetFloor) <
         Math.abs(prev.currentFloor - targetFloor)
           ? curr
           : prev
       );
-      nearestLift.targetFloors.push(targetFloor);
-      moveLift(nearestLift);
-    } else {
-      // If no lifts are available, check for idle lifts
-      const idleLifts = lifts.filter(
-        (lift) => lift.currentFloor === 1 && !lift.isMoving
-      );
-      if (idleLifts.length > 0) {
-        const nearestIdleLift = idleLifts[0]; // Assuming the first idle lift is the nearest
-        nearestIdleLift.targetFloors.push(targetFloor);
-        moveLift(nearestIdleLift);
-      }
+      nearestIdleLift.targetFloors.push(targetFloor);
+      moveLift(nearestIdleLift);
+      return;
     }
+
+    // If no idle lifts are available, add the request to the pending queue
+    pendingRequests.push({ floor: targetFloor, direction: direction });
   }
 
   async function moveLift(lift) {
@@ -127,13 +136,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const targetFloor = lift.targetFloors.shift();
     const translateY = (targetFloor - 1) * floorHeight;
     lift.element.style.transform = `translateY(-${translateY}px)`;
-    await wait(2000); // Simulate movement time (2 seconds to reach the destination)
+    await wait(2000); // Simulate movement time
 
-    // Wait until the lift has fully reached the destination floor before opening doors
     await openCloseDoors(lift);
 
+    lift.currentFloor = targetFloor; // Update the lift's current floor
     lift.isMoving = false;
-    pendingRequests.delete(targetFloor); // Remove the floor from pending requests
+
+    // Check for pending requests after completing this move
+    checkPendingRequests();
 
     if (lift.targetFloors.length > 0) {
       moveLift(lift);
@@ -156,5 +167,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function checkPendingRequests() {
+    if (pendingRequests.length > 0) {
+      const nextRequest = pendingRequests.shift();
+      const availableLifts = lifts.filter((lift) => !lift.isMoving);
+
+      if (availableLifts.length > 0) {
+        const nearestLift = availableLifts.reduce((prev, curr) =>
+          Math.abs(curr.currentFloor - nextRequest.floor) <
+          Math.abs(prev.currentFloor - nextRequest.floor)
+            ? curr
+            : prev
+        );
+        nearestLift.targetFloors.push(nextRequest.floor);
+        moveLift(nearestLift);
+      } else {
+        // If no lifts are available, put the request back in the queue
+        pendingRequests.unshift(nextRequest);
+      }
+    }
   }
 });
