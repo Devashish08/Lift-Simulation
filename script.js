@@ -94,18 +94,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function requestLift(targetFloor, direction) {
-    // Check if this request is already in the pendingRequests
-    if (
-      pendingRequests.some(
-        (req) => req.floor === targetFloor && req.direction === direction
-      )
-    ) {
-      return; // If there's already a pending request for this floor and direction, do nothing
-    }
-
-    // Check if any lift is already moving towards the target floor
+    // Check if a lift is already heading to the target floor in the same direction
     const liftHeadingToFloor = lifts.some((lift) =>
-      lift.destinationFloors.includes(targetFloor)
+      lift.destinationFloors.some(
+        (dest) => dest.floor === targetFloor && dest.direction === direction
+      )
     );
     if (liftHeadingToFloor) {
       return; // If a lift is already heading to the target floor, do nothing
@@ -117,8 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (idleLiftsOnSameFloor.length > 0) {
       const nearestIdleLift = idleLiftsOnSameFloor[0];
-      nearestIdleLift.targetFloors.push(targetFloor);
-      nearestIdleLift.destinationFloors.push(targetFloor);
+      nearestIdleLift.targetFloors.push({ floor: targetFloor, direction });
+      nearestIdleLift.destinationFloors.push({
+        floor: targetFloor,
+        direction
+      });
       moveLift(nearestIdleLift);
       return;
     }
@@ -132,29 +128,39 @@ document.addEventListener("DOMContentLoaded", () => {
           ? curr
           : prev
       );
-      nearestIdleLift.targetFloors.push(targetFloor);
-      nearestIdleLift.destinationFloors.push(targetFloor);
+      nearestIdleLift.targetFloors.push({ floor: targetFloor, direction });
+      nearestIdleLift.destinationFloors.push({
+        floor: targetFloor,
+        direction
+      });
       moveLift(nearestIdleLift);
       return;
     }
 
     // If no idle lifts are available, add the request to the pending queue
-    pendingRequests.push({ floor: targetFloor, direction: direction });
+    pendingRequests.push({ floor: targetFloor, direction });
   }
 
   async function moveLift(lift) {
     lift.isMoving = true;
-    const targetFloor = lift.targetFloors.shift();
+    const targetFloorObj = lift.targetFloors.shift();
+    const targetFloor = targetFloorObj.floor;
     const translateY = (targetFloor - 1) * floorHeight;
+    const floorsToMove = Math.abs(lift.currentFloor - targetFloor);
+    const moveTime = floorsToMove * 2000; // 2 seconds per floor
+
+    lift.element.style.transition = `transform ${moveTime}ms linear`;
     lift.element.style.transform = `translateY(-${translateY}px)`;
-    await wait(2000); // Simulate movement time
+    await wait(moveTime); // Simulate movement time
 
     await openCloseDoors(lift);
 
     lift.currentFloor = targetFloor; // Update the lift's current floor
     lift.isMoving = false;
     lift.destinationFloors = lift.destinationFloors.filter(
-      (floor) => floor !== targetFloor
+      (dest) =>
+        dest.floor !== targetFloor ||
+        dest.direction !== targetFloorObj.direction
     ); // Remove the reached floor from destinationFloors
 
     // Check for pending requests after completing this move
@@ -195,8 +201,14 @@ document.addEventListener("DOMContentLoaded", () => {
             ? curr
             : prev
         );
-        nearestLift.targetFloors.push(nextRequest.floor);
-        nearestLift.destinationFloors.push(nextRequest.floor);
+        nearestLift.targetFloors.push({
+          floor: nextRequest.floor,
+          direction: nextRequest.direction
+        });
+        nearestLift.destinationFloors.push({
+          floor: nextRequest.floor,
+          direction: nextRequest.direction
+        });
         moveLift(nearestLift);
       } else {
         // If no lifts are available, put the request back in the queue
