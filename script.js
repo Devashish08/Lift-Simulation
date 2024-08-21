@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         element: lift,
         currentFloor: 1,
         targetFloors: [],
+        destinationFloors: [], // Track all floors the lift is heading towards
         isMoving: false
       });
     }
@@ -102,6 +103,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return; // If there's already a pending request for this floor and direction, do nothing
     }
 
+    // Check if any lift is already moving towards the target floor
+    const liftHeadingToFloor = lifts.some((lift) =>
+      lift.destinationFloors.includes(targetFloor)
+    );
+    if (liftHeadingToFloor) {
+      return; // If a lift is already heading to the target floor, do nothing
+    }
+
     // Check for idle lifts on the same floor
     const idleLiftsOnSameFloor = lifts.filter(
       (lift) => lift.currentFloor === targetFloor && !lift.isMoving
@@ -109,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (idleLiftsOnSameFloor.length > 0) {
       const nearestIdleLift = idleLiftsOnSameFloor[0];
       nearestIdleLift.targetFloors.push(targetFloor);
+      nearestIdleLift.destinationFloors.push(targetFloor);
       moveLift(nearestIdleLift);
       return;
     }
@@ -123,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
           : prev
       );
       nearestIdleLift.targetFloors.push(targetFloor);
+      nearestIdleLift.destinationFloors.push(targetFloor);
       moveLift(nearestIdleLift);
       return;
     }
@@ -142,6 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lift.currentFloor = targetFloor; // Update the lift's current floor
     lift.isMoving = false;
+    lift.destinationFloors = lift.destinationFloors.filter(
+      (floor) => floor !== targetFloor
+    ); // Remove the reached floor from destinationFloors
 
     // Check for pending requests after completing this move
     checkPendingRequests();
@@ -182,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : prev
         );
         nearestLift.targetFloors.push(nextRequest.floor);
+        nearestLift.destinationFloors.push(nextRequest.floor);
         moveLift(nearestLift);
       } else {
         // If no lifts are available, put the request back in the queue
