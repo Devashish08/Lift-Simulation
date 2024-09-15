@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     createFloors(numFloors);
     createLifts(numLifts);
+    addFloorLines(numFloors);
   }
 
   function createFloors(numFloors) {
@@ -57,6 +58,14 @@ document.addEventListener("DOMContentLoaded", () => {
       floors.push(floor);
     }
     addFloorButtonListeners();
+  }
+  function addFloorLines(numFloors) {
+    for (let i = 1; i < numFloors; i++) {
+      const floorLine = document.createElement("div");
+      floorLine.className = "floor-line";
+      floorLine.style.bottom = `${i * floorHeight}px`;
+      floorsContainer.appendChild(floorLine);
+    }
   }
 
   function createLifts(numLifts) {
