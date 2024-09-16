@@ -2,19 +2,17 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
+    display: flex;
+    justify-content: center;
     background-color: #f0f0f0;
 }
 
-h1 {
-    text-align: center;
-    color: #333;
+.container {
+    max-width: 800px;
+    width: 100%;
 }
 
 .input-section {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
     margin-bottom: 20px;
 }
 
@@ -30,8 +28,7 @@ h1 {
     border: 1px solid #ccc;
     padding: 20px;
     background-color: white;
-    overflow: auto;
-    min-height: 400px;
+    overflow-x: auto;
 }
 
 #floors-container {
@@ -39,8 +36,6 @@ h1 {
     flex-direction: column;
     position: relative;
     z-index: 2;
-    width: 100%;
-    height: 100%;
 }
 
 .floor {
@@ -49,15 +44,6 @@ h1 {
     height: 80px;
     position: relative;
     z-index: 2;
-    width: 100%;
-
-    /* border-bottom: 1px solid #ccc; */
-}
-
-.floor:last-child {
-    border-bottom: none;
-
-    /* Remove the border from the last (ground) floor */
 }
 
 .floor-line {
@@ -67,9 +53,6 @@ h1 {
     height: 1px;
     background-color: #ccc;
     z-index: 1;
-    width: 100vw;
-    margin-left: -20px;
-
 }
 
 .floor-buttons {
@@ -119,16 +102,16 @@ h1 {
     bottom: 20px;
     left: 80px;
     height: calc(100% - 40px);
-    min-width: calc(100% - 100px);
+    width: calc(100% - 100px);
     z-index: 1;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: flex-end;
 }
 
 .lift {
-    width: 60px;
-    height: 80px;
+    width: 50px;
+    height: 60px;
     background-color: #3498db;
     margin-right: 20px;
     position: absolute;
@@ -153,15 +136,6 @@ h1 {
     width: 100%;
     height: 100%;
     display: flex;
-}
-
-.lift-floor-display {
-    font-size: 14px;
-    font-weight: bold;
-    color: white;
-    position: absolute;
-    top: 5px;
-    z-index: 3;
 }
 
 .lift-door {
@@ -192,10 +166,17 @@ h1 {
     transform: translateX(0);
 }
 
-
+#current-floor-display {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 16px;
+    color: #333;
+    z-index: 3;
+}
 
 @media (max-width: 600px) {
-    body {
+    .container {
         padding: 10px;
     }
 
@@ -211,16 +192,7 @@ h1 {
     }
 
     .lift {
-        width: 30px;
+        width: 50px;
         margin-right: 10px;
-    }
-
-    #simulation-area {
-        padding: 10px;
-    }
-
-    #lifts-container {
-        left: 40px;
-        width: calc(100% - 50px);
     }
 }

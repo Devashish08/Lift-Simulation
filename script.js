@@ -12,6 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
   startButton.addEventListener("click", startSimulation);
 
   function startSimulation() {
+    if (
+      document.getElementById("floors").value == "" ||
+      document.getElementById("lifts").value == ""
+    ) {
+      alert(
+        "Please enter valid numbers for floors (2 - 100) and lifts (1 - 100)"
+      );
+      return;
+    }
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
@@ -37,35 +46,25 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = numFloors; i >= 1; i--) {
       const floor = document.createElement("div");
       floor.className = "floor";
-      floor.innerHTML = `  
-            <div class="floor-buttons">
-                ${
-                  i < numFloors
-                    ? `<button class="floor-button up-button" data-floor="${i}" data-direction="up">Up</button>`
-                    : ""
-                }
-                ${
-                  i > 1
-                    ? `<button class="floor-button down-button" data-floor="${i}" data-direction="down">Down</button>`
-                    : ""
-                }
-                <div class="floor-number">${i}</div>
-               
-            </div>
-            
-        `;
+      floor.innerHTML = `
+        <div class="floor-buttons">
+          ${
+            i < numFloors
+              ? `<button class="floor-button up-button" data-floor="${i}" data-direction="up">Up</button>`
+              : ""
+          }
+          ${
+            i > 1
+              ? `<button class="floor-button down-button" data-floor="${i}" data-direction="down">Down</button>`
+              : ""
+          }
+          <div class="floor-number">${i}</div>
+        </div>
+      `;
       floorsContainer.appendChild(floor);
       floors.push(floor);
     }
     addFloorButtonListeners();
-  }
-  function addFloorLines(numFloors) {
-    for (let i = 1; i < numFloors; i++) {
-      const floorLine = document.createElement("div");
-      floorLine.className = "floor-line";
-      floorLine.style.bottom = `${i * floorHeight}px`;
-      floorsContainer.appendChild(floorLine);
-    }
   }
 
   function createLifts(numLifts) {
@@ -79,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="lift-door lift-door-left"></div>
         <div class="lift-door lift-door-right"></div>
       </div>
-      <div class="lift-floor-display">1</div> <!-- Display starts at floor 1 -->
     `;
       lift.style.left = `${i * liftWidth}px`; // Position based on index
       lift.style.bottom = "0px"; // Start at the first floor
@@ -91,6 +89,14 @@ document.addEventListener("DOMContentLoaded", () => {
         destinationFloors: [], // Track all floors the lift is heading towards
         isMoving: false
       });
+    }
+  }
+  function addFloorLines(numFloors) {
+    for (let i = 1; i < numFloors; i++) {
+      const floorLine = document.createElement("div");
+      floorLine.className = "floor-line";
+      floorLine.style.bottom = `${i * floorHeight}px`;
+      floorsContainer.appendChild(floorLine);
     }
   }
 
@@ -161,10 +167,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const floorsToMove = Math.abs(lift.currentFloor - targetFloor);
     const moveTime = floorsToMove * 2000; // 2 seconds per floor
 
-    // Update lift display to show target floor while moving
-    const floorDisplay = lift.element.querySelector(".lift-floor-display");
-    floorDisplay.textContent = targetFloor;
-
     lift.element.style.transition = `transform ${moveTime}ms linear`;
     lift.element.style.transform = `translateY(-${translateY}px)`;
     await wait(moveTime); // Simulate movement time
@@ -178,9 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
         dest.floor !== targetFloor ||
         dest.direction !== targetFloorObj.direction
     ); // Remove the reached floor from destinationFloors
-
-    // Update lift display to show current floor after reaching target
-    floorDisplay.textContent = lift.currentFloor;
 
     // Check for pending requests after completing this move
     checkPendingRequests();
