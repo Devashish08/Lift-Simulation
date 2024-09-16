@@ -24,10 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
-    if (numFloors < 2 || numLifts < 1 || numFloors > 100 || numLifts > 100) {
-      alert(
-        "Please enter valid numbers for floors (2 - 100) and lifts (1 - 100)"
-      );
+    if (numFloors < 2 || numLifts < 1) {
+      alert("Please enter at least 2 floors and 1 lift.");
       return;
     }
 
@@ -91,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
   function addFloorLines(numFloors) {
     for (let i = 1; i < numFloors; i++) {
       const floorLine = document.createElement("div");
@@ -106,9 +105,30 @@ document.addEventListener("DOMContentLoaded", () => {
       button.addEventListener("click", (e) => {
         const targetFloor = parseInt(e.target.getAttribute("data-floor"));
         const direction = e.target.getAttribute("data-direction");
+
+        // Disable only the pressed button (up or down)
+        disableButton(e.target);
+
         requestLift(targetFloor, direction);
       });
     });
+  }
+
+  function disableButton(button) {
+    button.disabled = true; // Disable only the button that was pressed (up or down)
+  }
+
+  function enableButton(button) {
+    button.disabled = false; // Re-enable the button after the lift completes its task
+  }
+
+  function enableButtonByDirection(floor, direction) {
+    const button = document.querySelector(
+      `.floor-button[data-floor="${floor}"][data-direction="${direction}"]`
+    );
+    if (button) {
+      enableButton(button); // Re-enable the button for the specific direction
+    }
   }
 
   function requestLift(targetFloor, direction) {
@@ -119,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       )
     );
     if (liftHeadingToFloor) {
+      console.log(`Lift already heading to floor ${targetFloor} ${direction}`);
       return; // If a lift is already heading to the target floor, do nothing
     }
 
@@ -128,12 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (idleLiftsOnSameFloor.length > 0) {
       const nearestIdleLift = idleLiftsOnSameFloor[0];
-      nearestIdleLift.targetFloors.push({ floor: targetFloor, direction });
-      nearestIdleLift.destinationFloors.push({
-        floor: targetFloor,
-        direction
-      });
-      moveLift(nearestIdleLift);
+      assignLiftToFloor(nearestIdleLift, targetFloor, direction);
       return;
     }
 
@@ -146,23 +162,39 @@ document.addEventListener("DOMContentLoaded", () => {
           ? curr
           : prev
       );
-      nearestIdleLift.targetFloors.push({ floor: targetFloor, direction });
-      nearestIdleLift.destinationFloors.push({
-        floor: targetFloor,
-        direction
-      });
-      moveLift(nearestIdleLift);
+      assignLiftToFloor(nearestIdleLift, targetFloor, direction);
       return;
     }
 
     // If no idle lifts are available, add the request to the pending queue
-    pendingRequests.push({ floor: targetFloor, direction });
+    if (
+      !pendingRequests.some(
+        (req) => req.floor === targetFloor && req.direction === direction
+      )
+    ) {
+      pendingRequests.push({ floor: targetFloor, direction });
+    }
+  }
+
+  function assignLiftToFloor(lift, targetFloor, direction) {
+    if (
+      !lift.destinationFloors.some(
+        (dest) => dest.floor === targetFloor && dest.direction === direction
+      )
+    ) {
+      lift.targetFloors.push({ floor: targetFloor, direction });
+      lift.destinationFloors.push({ floor: targetFloor, direction });
+      if (!lift.isMoving) {
+        moveLift(lift);
+      }
+    }
   }
 
   async function moveLift(lift) {
     lift.isMoving = true;
     const targetFloorObj = lift.targetFloors.shift();
     const targetFloor = targetFloorObj.floor;
+    const targetDirection = targetFloorObj.direction;
     const translateY = (targetFloor - 1) * floorHeight;
     const floorsToMove = Math.abs(lift.currentFloor - targetFloor);
     const moveTime = floorsToMove * 2000; // 2 seconds per floor
@@ -180,6 +212,9 @@ document.addEventListener("DOMContentLoaded", () => {
         dest.floor !== targetFloor ||
         dest.direction !== targetFloorObj.direction
     ); // Remove the reached floor from destinationFloors
+
+    // Re-enable only the button that was pressed (up or down) after lift completes the task
+    enableButtonByDirection(targetFloor, targetDirection);
 
     // Check for pending requests after completing this move
     checkPendingRequests();
@@ -219,19 +254,24 @@ document.addEventListener("DOMContentLoaded", () => {
             ? curr
             : prev
         );
-        nearestLift.targetFloors.push({
-          floor: nextRequest.floor,
-          direction: nextRequest.direction
-        });
-        nearestLift.destinationFloors.push({
-          floor: nextRequest.floor,
-          direction: nextRequest.direction
-        });
-        moveLift(nearestLift);
+        assignLiftToFloor(
+          nearestLift,
+          nextRequest.floor,
+          nextRequest.direction
+        );
       } else {
         // If no lifts are available, put the request back in the queue
         pendingRequests.unshift(nextRequest);
       }
     }
+  }
+
+  function enableFloorButtons(floor) {
+    const floorButtons = document.querySelectorAll(
+      `.floor-button[data-floor="${floor}"]`
+    );
+    floorButtons.forEach((button) => {
+      button.disabled = false;
+    });
   }
 });
