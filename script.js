@@ -24,8 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const numFloors = parseInt(document.getElementById("floors").value);
     const numLifts = parseInt(document.getElementById("lifts").value);
 
-    if (numFloors < 2 || numLifts < 1) {
-      alert("Please enter at least 2 floors and 1 lift.");
+    if (numFloors < 2 || numLifts < 1 || numFloors > 500 || numLifts > 500) {
+      alert(
+        "Please enter valid numbers for floors (2 - 500) and lifts (1 - 500)"
+      );
       return;
     }
 
